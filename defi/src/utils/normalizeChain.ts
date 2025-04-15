@@ -35,7 +35,7 @@ export function normalizeChain(chain: string) {
 
 
 export function isDoubleCounted(moduleDoubleCounted?: boolean, category?: string) {
-  return moduleDoubleCounted === true || ["Yield Aggregator", "Yield", "Liquidity manager", "Managed Token Pools", "Treasury Manager", "Anchor BTC"].includes(category ?? "none");
+  return moduleDoubleCounted === true || ["Yield Aggregator", "Yield", "Liquidity manager", "Onchain Capital Allocator", "Treasury Manager", "Anchor BTC"].includes(category ?? "none");
 }
 
 export const nonChains = ['PK', 'SK', 'tvl', 'tvlPrev1Hour', 'tvlPrev1Day', 'tvlPrev1Week']
@@ -433,7 +433,12 @@ export const chainCoingeckoIds = {
     github: ['celo-org'],
     symbol: "CELO",
     cmcId: "5567",
-    categories: ["EVM"],
+    categories: ["EVM",  "Rollup"],
+    parent: {
+      chain: "Ethereum",
+      types: ["L2", "gas"],
+      da: 'Eigen',
+    },
     chainId: 42220,
     twitter: "Celo",
     url: "https://celo.org/"
@@ -1203,7 +1208,8 @@ export const chainCoingeckoIds = {
     cmcId: "4642",
     categories: ["EVM"],
     twitter: "hedera",
-    url: "https://hedera.com/"
+    url: "https://hedera.com/",
+    chainId: 295,
   },
   "Findora": {
     geckoId: "findora",
@@ -1487,6 +1493,7 @@ export const chainCoingeckoIds = {
     categories: ["EVM"],
     twitter: "Filecoin",
     url: "https://filecoin.io/",
+    chainId: 314,
   },
   "Flow": {
     geckoId: "flow",
@@ -3368,7 +3375,8 @@ export const chainCoingeckoIds = {
       da: 'Ethereum',
     },
     twitter: "PolynomialFi",
-    url: "https://www.polynomial.fi/"
+    url: "https://www.polynomial.fi/",
+    chainId: 8008
   },
   "Electroneum": {
     geckoId: "electroneum",
@@ -4033,18 +4041,80 @@ export const chainCoingeckoIds = {
     chainId: 177
   }, 
   "Mind Network": { // added for the bridge dashboard, because of the slug of the chain
-    geckoId: null,
-    symbol: null,
+    geckoId: "mind-network",
+    symbol: "FHE",
     cmcId: null,
     categories: ["EVM", "Rollup"],
     parent: {
-      chain: "Ethereum",
-      types: ["L2"]
+      chain: "arbitrum",
+      types: ["L3"]
     },
     chainId: 228,
     twitter: "mindnetwork_xyz",
     github: ["mind-network"],
     url: "https://www.mindnetwork.xyz",
+  },
+  "AO": {
+    geckoId: "ao-computer",
+    symbol: "AO",
+    cmcId: "35386",
+    categories: [],
+    twitter: "aoTheComputer",
+    github: ["permaweb"],
+    url: "https://ao.arweave.net/",
+  },
+  "Supra": {
+    geckoId: "supra",
+    symbol: "SUPRA",
+    cmcId: "34240",
+    categories: ["EVM"],
+    twitter: "SUPRA_Labs",
+    url: "https://supra.com/",
+  }, 
+  "Prom": {
+    geckoId: "prometeus",
+    symbol: "PROM",
+    cmcId: null,
+    categories: ["EVM"],
+    twitter: "prom_io",
+    url: "https://prom.io/",
+    chainId: 277
+  },
+  "Goat": {
+    geckoId: null,
+    symbol: null,
+    cmcId: null,
+    categories: ["EVM", "Bitcoin Sidechains"],
+    twitter: "GOATRollup",
+    url: "https://www.goat.network/",
+    chainId: 2345
+  }, 
+  "Plume Mainnet": {
+    geckoId: null,
+    symbol: "PLUME",
+    cmcId: null,
+    categories: ["EVM"],
+    twitter: "plumenetwork",
+    url: "https://plumenetwork.xyz",
+    chainId: 98866
+  }, 
+  "Perennial": {
+    geckoId: null,
+    symbol: null,
+    cmcId: null,
+    categories: ["EVM"],
+    twitter: "perenniallabs",
+    url: "https://perennial.finance/",
+    chainId: 1424
+  },
+  "Peaq": {
+    geckoId: "peaq-2",
+    symbol: "PEAQ",
+    cmcId: "14588",
+    categories: ["EVM"],
+    twitter: "peaq",
+    url: "https://www.peaq.xyz/",
+    chainId: 3338
   }, 
 } as unknown as ChainCoinGekcoIds
 
@@ -4224,8 +4294,10 @@ const chainLabelMap = {
   "hyperliquid": "Hyperliquid",
   "winr": "WINR",
   "mtt_network": "MTT Network",
-  "hskt": "HashKey Chain",
+  "hsk": "HashKey Chain",
   "fhe": "Mind Network",
+  "ao": "AO",
+  "plume_mainnet": "Plume Mainnet",
 } as { [key: string]: string }
 
 // When we decide to change the display name of a chain, we add the mapping for the new name here

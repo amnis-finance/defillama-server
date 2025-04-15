@@ -255,7 +255,7 @@ test("no surprise category", async () => {
     'Token Locker',
     'Bug Bounty',
     'DCA Tools',
-    'Managed Token Pools',
+    'Onchain Capital Allocator',
     'Developer Tools',
     'Stablecoin Issuer',
     'Coins Tracker',
@@ -269,7 +269,9 @@ test("no surprise category", async () => {
     'Liquidity Automation',
     'Charity Fundraising',
     'Volume Boosting',
-    'DOR'
+    'DOR',
+    'Collateral Management',
+    'Meme'
   ]
   for (const protocol of protocols) {
     expect(whitelistedCategories).toContain(protocol.category);

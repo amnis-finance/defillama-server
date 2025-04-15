@@ -131,7 +131,12 @@ export default {
   kSTRK: require("./other/kSTRK"),
   jtoDerivs: require("./solana/jtoDerivs"),
   pac: require("./rwa/thepac"),
+  xu3o8: require("./rwa/xu3o8"),
   tonDerivs: require("./other/ton"),
   asseto: require("./rwa/asseto"),
-  radixUnkownToken: require("./markets/radix"),
+  lsulp: require("./markets/radix"),
+  sandglass: require("./yield/sandglass"),
+  concentrator: require("./yield/concentrator"),
+  liquidly: require("./yield/liquidly"),
+  cyclex: require("./rwa/cyclex"),
 };

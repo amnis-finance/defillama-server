@@ -1,22 +1,21 @@
-import { wrapScheduledLambda } from "../../../utils/shared/wrap";
-import { getTimestampAtStartOfDayUTC, getTimestampAtStartOfHour } from "../../../utils/date";
 import { Adapter, AdapterType, BaseAdapter, } from "@defillama/dimension-adapters/adapters/types";
-import canGetBlock from "../../utils/canGetBlock";
 import runAdapter from "@defillama/dimension-adapters/adapters/utils/runAdapter";
 import { getBlock } from "@defillama/dimension-adapters/helpers/getBlock";
-import { Chain } from "@defillama/sdk/build/general";
-import { AdaptorRecord, AdaptorRecordType, RawRecordMap, storeAdaptorRecord } from "../../db-utils/adaptor-record";
-import { processFulfilledPromises, } from "./helpers";
-import loadAdaptorsData from "../../data"
-import { ProtocolAdaptor, } from "../../data/types";
-import { PromisePool } from '@supercharge/promise-pool'
-import { AdapterRecord2, } from "../../db-utils/AdapterRecord2";
-import { storeAdapterRecord } from "../../db-utils/db2";
 import { elastic } from '@defillama/sdk';
-import { getUnixTimeNow } from "../../../api2/utils/time";
 import { humanizeNumber, } from "@defillama/sdk/build/computeTVL/humanizeNumber";
+import { Chain } from "@defillama/sdk/build/general";
+import { PromisePool } from '@supercharge/promise-pool';
+import { getUnixTimeNow } from "../../../api2/utils/time";
+import { getTimestampAtStartOfDayUTC, getTimestampAtStartOfHour } from "../../../utils/date";
+import { wrapScheduledLambda } from "../../../utils/shared/wrap";
+import loadAdaptorsData from "../../data";
+import { ProtocolAdaptor, } from "../../data/types";
+import { AdapterRecord2, } from "../../db-utils/AdapterRecord2";
+import { AdaptorRecord, AdaptorRecordType, RawRecordMap, storeAdaptorRecord } from "../../db-utils/adaptor-record";
+import { storeAdapterRecord } from "../../db-utils/db2";
+import canGetBlock from "../../utils/canGetBlock";
 import { sendDiscordAlert } from "../../utils/notify";
-import { getTimestampString } from "../../../api2/utils";
+import { processFulfilledPromises, } from "./helpers";
 
 
 // Runs a little bit past each hour, but calls function with timestamp on the hour to allow blocks to sync for high throughput chains. Does not work for api based with 24/hours
@@ -59,7 +58,7 @@ export type IStoreAdaptorDataHandlerEvent = {
 const ONE_DAY_IN_SECONDS = 24 * 60 * 60
 
 export const handler2 = async (event: IStoreAdaptorDataHandlerEvent) => {
-  const defaultMaxConcurrency = 21
+  const defaultMaxConcurrency = 10
   let { timestamp = timestampAnHourAgo, adapterType, protocolNames, maxConcurrency = defaultMaxConcurrency, isDryRun = false, isRunFromRefillScript = false,
     runType = 'default', yesterdayIdSet = new Set(), todayIdSet = new Set(),
     throwError = false,
@@ -190,9 +189,10 @@ export const handler2 = async (event: IStoreAdaptorDataHandlerEvent) => {
     }
 
     let success = true
+    let refillYesterdayPromise = undefined
     let errorObject: any
     // Get adapter info
-    let { id, module, } = protocol;
+    let { id, id2, module, } = protocol;
     // console.info(`Adapter found ${id} ${module} ${versionKey}`)
 
     try {
@@ -241,8 +241,8 @@ export const handler2 = async (event: IStoreAdaptorDataHandlerEvent) => {
         const isExpensiveAdapter = adaptor.isExpensiveAdapter
         // if it is an expensive adapter run every 4 hours or after 20:00 UTC
         const runNow = !isExpensiveAdapter || (hours % 4 === 0 || hours > 20)
-        const haveTodayData = todayIdSet.has(id)
-        const haveYesterdayData = yesterdayIdSet.has(id)
+        const haveTodayData = todayIdSet.has(id2)
+        const haveYesterdayData = yesterdayIdSet.has(id2)
         const yesterdayEndTimestamp = getTimestampAtStartOfDayUTC(Math.floor(Date.now() / 1000)) - 1
 
 
@@ -254,7 +254,7 @@ export const handler2 = async (event: IStoreAdaptorDataHandlerEvent) => {
           if (!runAtCurrTime && !haveYesterdayData) {
             console.info(`Refill ${adapterType} - ${protocol.module} - missing yesterday data, attempting to refill`)
             try {
-              await handler2({
+              refillYesterdayPromise = handler2({
                 timestamp: yesterdayEndTimestamp,
                 adapterType,
                 protocolNames: new Set([protocol.displayName]),
@@ -296,9 +296,14 @@ export const handler2 = async (event: IStoreAdaptorDataHandlerEvent) => {
       const adaptorRecords: {
         [key: string]: AdaptorRecord
       } = {}
+
+      let noDataReturned = true  // flag to track if any data was returned from the adapter, idea is this would be empty if we run for a timestamp before the adapter's start date
+
+
       for (const [version, adapter] of adaptersToRun) { // the version is the key for the record (like uni v2) not the version of the adapter
         const chainBlocks = {} // WARNING: reset chain blocks for each adapter, sharing this between v1 & v2 adapters that have different end timestamps have nasty side effects
         const runAdapterRes = await runAdapter(adapter, endTimestamp, chainBlocks, module, version, { adapterVersion })
+        if (noDataReturned) noDataReturned = runAdapterRes.length === 0
 
         const recordWithTimestamp = runAdapterRes.find((r: any) => r.timestamp)
         if (recordWithTimestamp) {
@@ -315,6 +320,13 @@ export const handler2 = async (event: IStoreAdaptorDataHandlerEvent) => {
         }
         processFulfilledPromises(runAdapterRes, rawRecords, version, KEYS_TO_STORE)
       }
+
+
+      if (noDataReturned && isRunFromRefillScript) {
+        console.info(`[${new Date(endTimestamp*1000).toISOString().slice(0, 10)}] No data returned for ${adapterType} - ${module} - skipping`)
+        return;
+      }
+
       const storedData: any = {}
       const adaptorRecordTypeByValue: any = Object.fromEntries(Object.entries(AdaptorRecordType).map(([key, value]) => [value, key]))
       for (const [recordType, record] of Object.entries(rawRecords)) {
@@ -332,6 +344,9 @@ export const handler2 = async (event: IStoreAdaptorDataHandlerEvent) => {
       await Promise.all(promises)
       if (process.env.runLocal === 'true' || isRunFromRefillScript)
         printData(storedData, recordTimestamp, protocol.module)
+
+      if (refillYesterdayPromise) 
+        await refillYesterdayPromise
     }
     catch (error) {
       try { (error as any).module = module } catch (e) { }
@@ -399,4 +414,3 @@ function printData(data: any, timestamp?: number, protocolName?: string) {
   }
   console.info('\n')
 }
-

@@ -41,10 +41,15 @@ export default function setRoutes(router: HyperExpress.Router, routerBasePath: s
   // router.get("/config/:chain/:contract", ew(getContractName));  // too many requests to handle here
   // add secret route to delete from PG cache
 
-  router.get("/protocol/:name", ew(async (req: any, res: any) => getProtocolishData(req, res, { dataType: 'protocol', skipAggregatedTvl: false, useNewChainNames: false, })));
+  router.get("/protocol/:name", ew(async (req: any, res: any) => getProtocolishData(req, res, {
+    dataType: 'protocol', skipAggregatedTvl: false, useNewChainNames: false, restrictResponseSize: req.query_parameters.restrictResponseSize !== 'false'
+  })));
   router.get("/treasury/:name", ew(async (req: any, res: any) => getProtocolishData(req, res, { dataType: 'treasury' })));
   router.get("/entity/:name", ew(async (req: any, res: any) => getProtocolishData(req, res, { dataType: 'entities' })));
-  router.get("/updatedProtocol/:name", (async (req, res) => getProtocolishData(req, res, { dataType: 'protocol', useHourlyData: false, skipAggregatedTvl: req.query_parameters.includeAggregatedTvl !== 'true' })));
+  router.get("/updatedProtocol/:name", (async (req, res) => getProtocolishData(req, res, {
+    dataType: 'protocol', useHourlyData: false, skipAggregatedTvl: req.query_parameters.includeAggregatedTvl !== 'true',
+    restrictResponseSize: req.query_parameters.restrictResponseSize !== 'false',
+  })));
 
   router.get("/tokenProtocols/:symbol", ew(getTokenInProtocols));
   router.get("/protocols", protocolsRouteResponse);
@@ -215,7 +220,7 @@ export default function setRoutes(router: HyperExpress.Router, routerBasePath: s
   }
 }
 
-async function getProtocolishData(req: HyperExpress.Request, res: HyperExpress.Response, { dataType, useHourlyData = false, skipAggregatedTvl = true, useNewChainNames = true }: GetProtocolishOptions) {
+async function getProtocolishData(req: HyperExpress.Request, res: HyperExpress.Response, { dataType, useHourlyData = false, skipAggregatedTvl = true, useNewChainNames = true, restrictResponseSize = true }: GetProtocolishOptions) {
   let name = decodeURIComponent(req.path_parameters.name);
   name = sluggify({ name } as any);
   const protocolData = (cache as any)[dataType + 'SlugMap'][name];
@@ -239,11 +244,17 @@ async function getProtocolishData(req: HyperExpress.Request, res: HyperExpress.R
   if (!protocolData)
     return errorResponse(res, 'Protocol not found')
 
+  if (protocolData.category === 'CEX')
+    restrictResponseSize = false
+
+  restrictResponseSize = false // hack to revert to old behavior
+
   const responseData = await cachedCraftProtocolV2({
     protocolData,
     useNewChainNames,
     useHourlyData,
     skipAggregatedTvl,
+    restrictResponseSize,
   });
   return res.json(responseData);
 }
@@ -313,6 +324,7 @@ type GetProtocolishOptions = {
   useHourlyData?: boolean,
   skipAggregatedTvl?: boolean,
   useNewChainNames?: boolean,
+  restrictResponseSize?: boolean,
 }
 
 async function getInflows(req: HyperExpress.Request, res: HyperExpress.Response) {

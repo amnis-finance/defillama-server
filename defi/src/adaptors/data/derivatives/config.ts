@@ -720,7 +720,7 @@ export default {
         id: "5151"
     },
     "filament": {
-        id: "5177",
+        id: "5650",
     },
     "kuma-v1": {
         id: "5079"
@@ -836,5 +836,14 @@ export default {
     },
     "agdex": {
         id: "5467"
-    }
+    },
+    "vest": {
+        id: "4400"
+    },
+    "goosefx_v2": {
+        id: "5998"
+    },
+    "zo": {
+        id: "6018"
+    },
 } as AdaptorsConfig

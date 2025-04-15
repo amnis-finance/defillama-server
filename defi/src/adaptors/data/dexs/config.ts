@@ -1238,8 +1238,7 @@ export default {
         "id": "2748"
     },
     "acala-swap": {
-        "id": "1847",
-        enabled: false
+        "id": "1847"
     },
     "maia-v3": {
         "id": "2760"
@@ -1983,7 +1982,6 @@ export default {
     },
     "aftermath-fi-amm": {
         parentId: "Aftermath Finance",
-        "enabled": false,
         "id": "3259"
     },
     "sanctum": {
@@ -2230,7 +2228,6 @@ export default {
         id: "4510"
     },
     "glowswap": {
-        enabled: false,
         id: "4515"
     },
     "merlinswap": {
@@ -2260,7 +2257,6 @@ export default {
     },
     "fenix-finance": {
         parentId: "Fenix Finance",
-        enabled: false,
         id: "4563"
     },
     "nuri-exchange-v1": {
@@ -2839,7 +2835,7 @@ export default {
     "degen-launchpad": {
         id: "5857"
     },
-    "hyperfluid": {
+    "hyperion": {
         id: "5480"
     },
     "metropolis-amm": {
@@ -2909,5 +2905,47 @@ export default {
     },
     "gacha": {
         id: "5942"
+    },
+    "kittypunch-stable": {
+        id: "5790"
+    },
+    "saucerswap-v2": {
+        id: "5966"
+    },
+    "justbet": {
+        id:"5950"
+    },
+    "katana-v3": {
+        id: "5972"
+    },
+    "sandglass": {
+        id: "5965"
+    },
+    "syncswap-v3": {
+        id: "5982"
+    },
+    "verus": {
+        id: "5601" 
+    },
+    "haedal": {
+        id: "5784"
+    },
+    "hardswap": {
+        id: "5999"
+    },
+    "momentum": {
+        id: "6005"
+    },
+    "jup-ape": {
+        id: "4860"
+    },
+    "sonex": {
+        id: "5640"
+    },
+    "kyo-fi-v3": {
+        id: "5622"
+    },
+    "kongswap": {
+        id: "5528"
     }
 } as AdaptorsConfig
